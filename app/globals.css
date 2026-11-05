@@ -1,0 +1,86 @@
+@import "tailwindcss";
+
+/*
+ * Verity design tokens. Tailwind v4 turns each --color-* / --font-* / --shadow-*
+ * variable into utilities (bg-navy-900, text-muted, shadow-card, …).
+ */
+@theme {
+  --color-navy-950: #0a1d2f;
+  --color-navy-900: #102a43;
+  --color-navy-800: #1c3a58;
+  --color-navy-700: #2f4d6a;
+  --color-navy-100: #e4ecf4;
+  --color-navy-50: #f1f5f9;
+
+  --color-teal-50: #effcf9;
+  --color-teal-100: #ccf7ef;
+  --color-teal-200: #99eedf;
+  --color-teal-400: #2dd4bf;
+  --color-teal-500: #17b8a5;
+  --color-teal-600: #0e9686;
+  --color-teal-700: #0b766b;
+  --color-teal-800: #0c5e56;
+
+  --color-risk-50: #fdf3f2;
+  --color-risk-100: #fbe1de;
+  --color-risk-200: #f5c2bc;
+  --color-risk-500: #d8544a;
+  --color-risk-600: #bd3f36;
+  --color-risk-700: #9b322b;
+
+  --color-canvas: #f3f7fa;
+  --color-line: #dde6ef;
+  --color-line-strong: #c9d6e3;
+  --color-muted: #526579;
+  --color-faint: #7f91a3;
+
+  --font-sans: var(--font-manrope), ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font-mono: var(--font-plex-mono), ui-monospace, "SFMono-Regular", Menlo, monospace;
+
+  --shadow-card: 0 1px 2px rgb(16 42 67 / 0.04), 0 6px 20px -8px rgb(16 42 67 / 0.1);
+  --shadow-raised: 0 2px 4px rgb(16 42 67 / 0.05), 0 16px 40px -12px rgb(16 42 67 / 0.18);
+
+  --animate-fade-in: fade-in 220ms ease-out both;
+  @keyframes fade-in {
+    from {
+      opacity: 0;
+      transform: translateY(4px);
+    }
+    to {
+      opacity: 1;
+      transform: none;
+    }
+  }
+}
+
+@layer base {
+  html {
+    -webkit-text-size-adjust: 100%;
+  }
+  body {
+    background-color: var(--color-canvas);
+    color: var(--color-navy-900);
+    font-family: var(--font-sans);
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+  :focus-visible {
+    outline: 2px solid var(--color-teal-500);
+    outline-offset: 2px;
+  }
+  /* Hide number-input spinners: values are typed, not nudged. */
+  input[type="number"]::-webkit-inner-spin-button,
+  input[type="number"]::-webkit-outer-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
+}

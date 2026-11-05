@@ -1,0 +1,45 @@
+// Verity — Prisma schema.
+//
+// SQLite is used for local development. The model only uses portable types
+// (String, Float, Int, DateTime) so switching `provider` to "postgresql"
+// requires no model changes — see README → "Migrating to PostgreSQL".
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+/// One simulated loan application and the result Verity calculated for it.
+/// No personal information (names, IDs, contact details) is stored.
+model Application {
+  /// Public application reference, e.g. "VRT-7K3M9QX2AB".
+  id                 String   @id
+  /// Submitted values.
+  monthlyIncome      Float
+  dtiRatio           Float
+  creditScore        Int
+  /// "APPROVED" | "REJECTED" (stored as text for SQLite/PostgreSQL portability).
+  decision           String
+  /// Overall demonstration score (0–100) and the threshold in force at the time.
+  score              Float
+  threshold          Float
+  /// Points each factor added to (+) or removed from (−) the base score.
+  incomeContribution Float
+  dtiContribution    Float
+  creditContribution Float
+  /// JSON: per-factor calculation details (normalised value, status, strength, reference point).
+  factorDetails      String
+  /// JSON: plain-language explanation generated from the calculation.
+  explanation        String
+  /// Version of the demonstration scoring policy that produced this result.
+  policyVersion      String
+  /// Client-generated key that makes retried/double submissions idempotent.
+  submissionKey      String?  @unique
+  createdAt          DateTime @default(now())
+
+  @@index([createdAt])
+}
