@@ -1,213 +1,132 @@
-# Verity — Financial decisions, made clearer.
+# Verity – Financial Decisions, Made Clearer
 
-Verity is a full-stack **educational loan-decision simulation** built for the CSIT305 project
-*"Enhancing Customer Understanding of AI-Based Loan Approval Decisions."* Users enter a monthly
-income, debt-to-income (DTI) ratio and credit score; the server calculates a demonstration decision,
-stores it, and explains — in plain language and with charts — how each factor contributed.
+**Verity** is a student project developed for CSIT305. It is an interactive web application that helps users understand how different financial factors can affect a loan decision.
 
-> ### ⚠️ Academic disclaimer
-> Verity is an academic demonstration, **not a real lending system**. It does not make or represent
-> real lending decisions, any bank's credit policy, or any regulatory standard. Decisions come from a
-> transparent, deterministic, documented scoring policy — not a trained machine-learning model — and
-> the factor contributions are **not** SHAP or LIME values. Use fictional values only.
+The idea behind Verity is simple: instead of only showing whether a loan application is approved or rejected, we want users to understand *why* that decision was made.
+
+## About the Project
+
+Loan decisions can sometimes be difficult for customers to understand. Applicants may receive a decision without having a clear explanation of which financial factors influenced the result.
+
+We developed Verity to make this process easier to understand through a simple interface that explains how factors such as income, debt-to-income ratio, and credit score affect a simulated loan decision.
+
+This project is designed for learning and demonstration purposes. It does not represent the actual policies of any bank or financial institution.
+
+## What Can You Do With Verity?
+
+- **Try a loan assessment:** Enter financial details such as monthly income, debt-to-income ratio, and credit score.
+- **View the result:** See whether your application is approved or rejected according to the project's decision rules.
+- **Understand the decision:** View explanations showing how each financial factor contributed to the result.
+- **Explore previous assessments:** Review earlier applications through the dashboard.
+- **Compare different situations:** Change the financial details and see how the result changes.
+
+## How Does It Work?
+
+Verity uses a scoring system created for this project.
+
+When a user submits their financial information, the application calculates a score based on three main factors:
+
+1. **Monthly income:** The applicant's monthly income.
+2. **Debt-to-income ratio (DTI):** The percentage of income used to pay existing debts.
+3. **Credit score:** A numerical value used in the simulation to represent credit history.
+
+The application combines these factors to produce a result and provides an explanation of how they influenced the decision.
+
+The scoring rules are predefined by our project team. This is not a trained machine learning model, and the explanations are not generated using SHAP or LIME.
+
+## Technologies Used
+
+We used the following technologies to develop Verity:
+
+| Technology | Purpose |
+|---|---|
+| Next.js | Building the website |
+| React | Creating the user interface |
+| TypeScript | Writing and organising the application code |
+| Tailwind CSS | Styling the website |
+| Prisma | Working with the database |
+| SQLite | Storing application records |
+
+## Running the Project Locally
+
+If you want to run Verity on your computer, follow these steps.
+
+### 1. Requirements
+
+Make sure you have:
+
+- Node.js (version 22.13 or later)
+- npm
+- Git
+
+### 2. Download the Project
+
+Clone the repository:
+
+```bash
+git clone https://github.com/Sifan-Soboka/verity.git
+```
+
+Open the project folder:
+
+```bash
+cd verity
+```
+
+### 3. Install Dependencies
+
+```bash
+npm install
+```
+
+### 4. Set Up Environment Variables
+
+Create a `.env` file using the example provided:
+
+```bash
+cp .env.example .env
+```
+
+On Windows PowerShell, you can use:
+
+```powershell
+Copy-Item .env.example .env
+```
+
+### 5. Set Up the Database
+
+```bash
+npm run db:setup
+```
+
+### 6. Start the Website
+
+```bash
+npm run dev
+```
+
+Open your browser and visit:
+
+```text
+http://localhost:3000
+```
+
+## Project Limitations
+
+There are a few things worth keeping in mind:
+
+- Verity is an educational simulation, not a real loan approval platform.
+- It does not connect to banks or access real customer financial records.
+- The decision-making process uses predefined scoring rules rather than a trained AI model.
+- The explanations show the contributions defined by our scoring system; they are not SHAP or LIME explanations.
+- The results should not be used to make real financial decisions.
+
+## Our Goal
+
+Through Verity, we aim to demonstrate how financial decision-making systems can become easier to understand by providing clear explanations alongside their results.
+
+**Verity – Financial decisions, made clearer.**
 
 ---
 
-## Features
-
-- **Landing page** with a worked example calculated live by the engine (report Scenario B).
-- **Project dataset input** — load any of the 32,424 applicants in
-  `data/synthetic_personal_finance_dataset.csv` by user ID or at random; values are converted and fill
-  the form (still editable). See [Dataset](#dataset).
-- **Assessment form** — numeric inputs with ranges, examples, client- and server-side validation,
-  loading state, idempotent submission (double-clicks never create duplicates), and one-click presets
-  for the five report scenarios (A–E), which stay editable.
-- **Results page** loaded from the API by application ID: outcome, application ID, submitted values,
-  0–100 score track with threshold, diverging factor-contribution chart, "how the score adds up"
-  arithmetic, plain-language explanation, three consistent factor cards, and — for rejections —
-  calculated single-factor changes that would reach approval.
-- **Dashboard** — totals, approvals, rejections, average score and outcome distribution, all computed
-  from stored records; recent applications with links; empty state; clear history with confirmation.
-- **Scenario check** — when submitted values match a report scenario, the results page shows whether
-  the calculated outcome agrees with the report's intended outcome (it never uses that outcome).
-
-## Dataset
-
-`data/synthetic_personal_finance_dataset.csv` is the project dataset (32,424 synthetic records).
-On the assessment page, **Load from the project dataset** fetches one record through
-`GET /api/dataset` and fills the form; the user then submits it like any other application.
-
-| Dataset column | Verity input | Conversion |
-|---|---|---|
-| `monthly_income_usd` | Monthly income (AED) | × 3.6725 (fixed USD/AED peg), 2 dp |
-| `debt_to_income_ratio` | DTI ratio (%) | × 100 — the dataset stores a fraction (loan EMI ÷ income) |
-| `credit_score` | Credit score | unchanged (300–850) |
-
-Notes:
-
-- Only those three values (plus `user_id` and `has_loan`) are read. Age, gender, education, job,
-  region and the other columns are ignored, so they can't appear next to or influence a decision
-  (report §9.4 on proxy bias).
-- 19,429 records (60%) have no loan, so their DTI is 0%. "Random applicant" picks only records with a
-  loan by default.
-- 7,752 records (24%) have repayments larger than income (DTI above 100%, up to ≈ 9,067%). DTI is
-  therefore accepted up to 10,000%; anything above the policy's 60% limit is rejected with an
-  explanation.
-- The dataset has **no approval/outcome column**, so it supplies inputs only — it cannot validate the
-  decisions. Under `verity-demo-1.0` about 35% of records are approved (50.7% of those without a loan,
-  11.7% of those with one); every record with DTI above 60% is rejected.
-- To use another copy of the file, set `DATASET_PATH`. The file is parsed strictly: a missing column,
-  bad number or duplicate `user_id` stops loading with the line number rather than skipping rows.
-
-## Tech stack
-
-Next.js 15 (App Router) · React 19 · TypeScript · Tailwind CSS 4 · Prisma 6 · SQLite · Node's built-in
-test runner (`node:test`) via `tsx`. Charts and icons are plain SVG/CSS — no extra UI libraries.
-
-## Project structure
-
-```
-app/
-  page.tsx                      Landing page
-  apply/page.tsx                Assessment form page
-  applications/[id]/page.tsx    Result page (fetches GET /api/applications/[id])
-  dashboard/page.tsx            Dashboard & history
-  api/applications/route.ts     POST · GET · DELETE  (thin wrappers)
-  api/applications/[id]/route.ts GET one application
-  api/dataset/route.ts          GET one dataset applicant (by ID or random)
-components/                     UI: layout, primitives, form, results, dashboard
-lib/
-  engine/policy.ts              ← ALL weights, reference points, threshold and limits
-  engine/decision.ts            Deterministic decision engine
-  explain/explanation.ts        Plain-language explanation engine
-  validation/                   Input ranges + validation (shared by form and API)
-  server/handlers.ts            API logic (validate → score → explain → save → respond)
-  server/prismaRepository.ts    Prisma data access
-  api/client.ts                 Browser API client
-  scenarios.ts                  Report scenarios A–E (presets / test cases)
-  dataset/applicants.ts         Dataset parsing + USD→AED / DTI conversion
-  server/dataset.ts             Loads the dataset CSV once and looks up records
-data/                           Project dataset (CSV)
-prisma/                         schema.prisma + migrations
-tests/                          Automated tests
-docs/DECISION_POLICY.md         Formula, worked examples, calibration notes
-docs/API.md                     API reference
-```
-
-## Getting started
-
-**Requirements:** Node.js **22.13 or newer** (the database tests use the built-in `node:sqlite`) and npm.
-
-```bash
-git clone <your-repo-url> verity
-cd verity
-npm install                 # also runs `prisma generate`
-cp .env.example .env        # Windows: copy .env.example .env
-npm run db:setup            # creates prisma/dev.db from the migrations
-npm run dev                 # http://localhost:3000
-```
-
-Production build:
-
-```bash
-npm run build
-npm start
-```
-
-### Environment variables
-
-| Variable | Example | Purpose |
-|---|---|---|
-| `DATABASE_URL` | `file:./dev.db` | Prisma connection string (relative to `prisma/`). Never commit `.env`. |
-| `DATASET_PATH` | *(optional)* | Path to the dataset CSV. Defaults to `data/synthetic_personal_finance_dataset.csv`. |
-
-### Database commands
-
-| Command | What it does |
-|---|---|
-| `npm run db:setup` | Apply migrations (`prisma migrate deploy`) |
-| `npm run db:migrate` | Create a new migration after editing `schema.prisma` (`prisma migrate dev`) |
-| `npm run db:reset` | Drop and recreate the database |
-| `npm run db:studio` | Browse records in Prisma Studio |
-
-Only the three financial values and calculated results are stored — no names or personal details.
-
-## How decisions are calculated
-
-```
-score = 50 + income points + DTI points + credit-score points        (0–100)
-Approved if score ≥ 50 and DTI ≤ 60%
-```
-
-| Factor | Reference (0 pts) | Max effect |
-|---|---|---|
-| Monthly income | AED 6,000 (full support at 15,000, full concern at 2,000) | ±10 |
-| DTI ratio (lower is better) | 30% (full support at 10%, full concern at 70%) | ±14 |
-| Credit score | 640 (full support at 800, full concern at 550) | ±26 |
-
-Each value is normalised to −1…+1 between its anchors (piecewise-linear), multiplied by the factor's
-maximum points and rounded to one decimal, so the contributions shown always add up to the score.
-All five report scenarios reproduce the report's intended outcomes **without special-casing**:
-
-| Scenario | Income | DTI | Credit | Score | Outcome |
-|---|---:|---:|---:|---:|---|
-| A | 15,000 | 18% | 790 | 92.8 | Approved |
-| B | 10,000 | 35% | 720 | 65.6 | Approved |
-| C | 8,000 | 48% | 690 | 54.0 | Approved (borderline) |
-| D | 6,000 | 65% | 620 | 31.9 | Rejected (also above DTI limit) |
-| E | 11,000 | 25% | 580 | 41.8 | Rejected |
-
-An equal-weight policy got C and E wrong; the conflict, the adjustment and the 60% DTI limit are
-explained in **[docs/DECISION_POLICY.md](docs/DECISION_POLICY.md)**. To change the policy, edit
-`lib/engine/policy.ts` only.
-
-## API
-
-`POST /api/applications` · `GET /api/applications` · `GET /api/applications/{id}` ·
-`DELETE /api/applications?confirm=true` · `GET /api/dataset` — see **[docs/API.md](docs/API.md)**.
-
-## Testing
-
-```bash
-npm test             # all automated tests
-npm run typecheck    # TypeScript
-```
-
-| File | Covers |
-|---|---|
-| `tests/engine.test.ts` | normalisation, contributions, score arithmetic, threshold boundary, DTI limit, monotonicity, scenarios A–E, paths to approval |
-| `tests/explanation.test.ts` | explanations use actual values, differ per applicant, list supporting/concern factors, borderline and DTI-limit wording, no SHAP/LIME claims |
-| `tests/validation.test.ts` | empty, non-numeric, negative, zero, decimal, out-of-range (incl. DTI above 100%), very large values, unexpected fields |
-| `tests/api.test.ts` | status codes, response envelope, persistence, idempotent/duplicate submissions, database failure (500 without leaking details), history, clear |
-| `tests/dataset.test.ts` | dataset parsing and conversion, malformed files, all 32,424 real records validate and get a decision, `GET /api/dataset` |
-| `tests/repository.test.ts` | database operations against a real SQLite database built from the Prisma migration SQL |
-| `tests/prisma-repository.test.ts` | the same database contract through the real Prisma client (runs after `npm install`; skipped if the client isn't generated) |
-
-## Migrating to PostgreSQL
-
-The schema uses only portable types (`String`, `Float`, `Int`, `DateTime`).
-
-1. In `prisma/schema.prisma` set `provider = "postgresql"`.
-2. Set `DATABASE_URL` to your PostgreSQL URL.
-3. Delete `prisma/migrations` (they are SQLite-specific) and run `npm run db:migrate -- --name init`.
-
-Optionally switch `monthlyIncome`/`dtiRatio` to `Decimal` and `factorDetails`/`explanation` to `Json`.
-
-## Known limitations
-
-- The scoring policy is a hand-calibrated demonstration, fitted to five fictional scenarios; it is not
-  validated against real lending data and ignores loan amount, term, expenses, employment, etc.
-- It is additive: below the DTI limit, strong factors can offset weak ones. The 60% DTI limit is a
-  hard cut-off.
-- The dataset has no outcome labels, so it cannot be used to check whether decisions are "correct".
-- No authentication — anyone with access to a running instance can view and clear the history.
-  Intended for local or classroom use.
-- Contributions describe Verity's own formula; they are not SHAP/LIME attributions of a model.
-- SQLite is suited to a single local instance; use PostgreSQL for shared deployments.
-
-## Academic context
-
-Built for CSIT305 (Group 2). The five scenarios and illustrative explanations come from the project
-report, which studies whether plain-language explanations and visualisation improve customers'
-understanding of AI-assisted loan decisions. Generative-AI assistance used in building this
-application should be documented according to the university's requirements.
+*Developed as part of the CSIT305 university project.*
