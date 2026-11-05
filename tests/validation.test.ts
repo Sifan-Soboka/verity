@@ -15,7 +15,7 @@ describe("API input validation", () => {
     assert.deepEqual(validateApplicationInput(valid), { ok: true, value: valid });
     for (const body of [
       { monthlyIncome: 1_000, dtiRatio: 0, creditScore: 300 },
-      { monthlyIncome: 1_000_000, dtiRatio: 100, creditScore: 900 },
+      { monthlyIncome: 1_000_000, dtiRatio: 10_000, creditScore: 900 },
       { monthlyIncome: 8_500.75, dtiRatio: 35.25, creditScore: 640 },
     ]) {
       assert.equal(validateApplicationInput(body).ok, true, JSON.stringify(body));
@@ -56,7 +56,9 @@ describe("API input validation", () => {
 
   it("handles DTI edge cases", () => {
     assert.equal(apiError({ ...valid, dtiRatio: -0.1 }, "dtiRatio"), "Debt-to-income ratio cannot be below 0%.");
-    assert.equal(apiError({ ...valid, dtiRatio: 100.5 }, "dtiRatio"), "Debt-to-income ratio cannot be above 100%.");
+    assert.equal(apiError({ ...valid, dtiRatio: 10_000.5 }, "dtiRatio"), "Debt-to-income ratio cannot be above 10,000%.");
+    // Above 100% is valid input (repayments larger than income) — the policy rejects it, not validation.
+    assert.equal(validateApplicationInput({ ...valid, dtiRatio: 140 }).ok, true);
     assert.match(apiError({ ...valid, dtiRatio: 33.333 }, "dtiRatio"), /at most 2 decimal places/);
   });
 
@@ -110,11 +112,11 @@ describe("form value parsing", () => {
   });
 
   it("applies the same range rules as the API", () => {
-    const r = validateFormValues({ monthlyIncome: "0", dtiRatio: "120", creditScore: "250" });
+    const r = validateFormValues({ monthlyIncome: "0", dtiRatio: "12000", creditScore: "250" });
     assert.equal(r.ok, false);
     if (!r.ok) {
       assert.equal(r.fieldErrors.monthlyIncome, "Monthly income must be greater than zero.");
-      assert.equal(r.fieldErrors.dtiRatio, "Debt-to-income ratio cannot be above 100%.");
+      assert.equal(r.fieldErrors.dtiRatio, "Debt-to-income ratio cannot be above 10,000%.");
       assert.equal(r.fieldErrors.creditScore, "Credit score must be between 300 and 900.");
     }
   });

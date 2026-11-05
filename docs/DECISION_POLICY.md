@@ -152,7 +152,26 @@ counterfactual — not financial advice.
 
 ---
 
-## 5. Changing the policy
+## 5. Applying the policy to the project dataset
+
+The policy was **not** recalibrated for the dataset (it has no outcome labels to calibrate against).
+Applied to all 32,424 records after conversion (USD × 3.6725, DTI fraction × 100):
+
+| Group | Approved |
+|---|---|
+| All records | 11,374 / 32,424 (35.1%) |
+| No loan (DTI 0%) | 9,858 / 19,429 (50.7%) |
+| With a loan | 1,516 / 12,995 (11.7%) |
+| With a loan and DTI ≤ 60% | 1,516 / 3,372 (45.0%) |
+| DTI above 60% | 0 / 9,623 (0%) — 2,803 of these scored ≥ 50 and were stopped only by the limit |
+| Credit score ≥ 640 | 8,730 / 12,481 (69.9%) |
+| Credit score < 640 | 2,644 / 19,943 (13.3%) |
+
+The dataset's credit scores average 575 (below the 640 reference) and most borrowers' repayments are
+very high relative to income, which is why approval rates are low for borrowers. These figures
+describe how the demonstration policy treats the synthetic data, not how real lenders would.
+
+## 6. Changing the policy
 
 Edit `DEMO_POLICY` in `lib/engine/policy.ts` and bump `version`. `assertValidPolicy` rejects
 inconsistent settings (e.g. a score range outside 0–100). Then run `npm test`: the scenario tests will

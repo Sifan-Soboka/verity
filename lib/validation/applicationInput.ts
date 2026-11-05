@@ -35,7 +35,7 @@ export function checkNumber(key: FactorKey, n: number): string | null {
   }
   if (key === "dtiRatio") {
     if (n < limit.min) return "Debt-to-income ratio cannot be below 0%.";
-    if (n > limit.max) return "Debt-to-income ratio cannot be above 100%.";
+    if (n > limit.max) return `Debt-to-income ratio cannot be above ${nf.format(limit.max)}%.`;
   }
   if (key === "creditScore") {
     if (!Number.isInteger(n)) return "Credit score must be a whole number.";

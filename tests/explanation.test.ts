@@ -72,6 +72,13 @@ describe("explanation engine", () => {
     );
   });
 
+  it("describes DTI above 100% as repayments larger than income", () => {
+    const e = explain({ monthlyIncome: 12_970.28, dtiRatio: 140, creditScore: 543 });
+    assert.match(e.factors[1].text, /your debt repayments are about 1\.4 times your monthly income/);
+    assert.match(e.factors[1].text, /above the 60% maximum/);
+    assert.equal(computeDecision({ monthlyIncome: 12_970.28, dtiRatio: 140, creditScore: 543 }).decision, "REJECTED");
+  });
+
   it("describes neutral factors as having little effect", () => {
     const e = explain({ monthlyIncome: 6_000, dtiRatio: 30, creditScore: 640 });
     assert.deepEqual(e.neutral, ["monthlyIncome", "dtiRatio", "creditScore"]);

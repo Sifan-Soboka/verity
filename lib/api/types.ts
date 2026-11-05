@@ -6,6 +6,7 @@
  *   failure → { ok: false, error: { code, message, fieldErrors? } }
  */
 import type { ApplicationInput, Decision, FactorKey, FactorResult } from "../engine/types";
+import type { DatasetApplicant } from "../dataset/applicants";
 import type { Explanation } from "../explain/explanation";
 import type { FieldErrors } from "../validation/applicationInput";
 
@@ -46,6 +47,12 @@ export interface ApplicationSummary {
   rejected: number;
   /** Mean score across all stored applications, or null when there are none. */
   averageScore: number | null;
+}
+
+/** GET /api/dataset response: one dataset record converted to Verity's units. */
+export interface DatasetApplicantResponse extends DatasetApplicant {
+  /** Total records in the dataset (for display). */
+  datasetSize: number;
 }
 
 export interface ApplicationListResponse {

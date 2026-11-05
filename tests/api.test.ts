@@ -68,13 +68,13 @@ describe("POST /api/applications", () => {
 
   it("rejects invalid values with field errors (422) and saves nothing", async () => {
     const { status, body } = await read(
-      await handleCreateApplication(post({ monthlyIncome: -1, dtiRatio: 120, creditScore: 1000 }), getRepo),
+      await handleCreateApplication(post({ monthlyIncome: -1, dtiRatio: 10_001, creditScore: 1000 }), getRepo),
     );
     assert.equal(status, 422);
     assert.equal(body.ok, false);
     assert.equal(body.error.code, "VALIDATION_ERROR");
     assert.equal(body.error.fieldErrors.monthlyIncome, "Monthly income cannot be negative.");
-    assert.equal(body.error.fieldErrors.dtiRatio, "Debt-to-income ratio cannot be above 100%.");
+    assert.equal(body.error.fieldErrors.dtiRatio, "Debt-to-income ratio cannot be above 10,000%.");
     assert.equal(body.error.fieldErrors.creditScore, "Credit score must be between 300 and 900.");
     assert.equal((await repo.summary()).total, 0);
   });

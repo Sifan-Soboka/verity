@@ -10,6 +10,7 @@ import type {
   ApiResponse,
   ApplicationListResponse,
   ApplicationRecord,
+  DatasetApplicantResponse,
 } from "./types";
 
 const TIMEOUT_MS = 15_000;
@@ -92,6 +93,18 @@ export function listApplications(limit = 20, signal?: AbortSignal): Promise<Appl
 
 export function clearApplications(): Promise<{ deleted: number }> {
   return request<{ deleted: number }>("/api/applications?confirm=true", { method: "DELETE" });
+}
+
+/** One applicant from the project dataset, already converted to Verity's units. */
+export function fetchDatasetApplicant(
+  query: { userId: string } | { random: true; withLoan: boolean },
+  signal?: AbortSignal,
+): Promise<DatasetApplicantResponse> {
+  const params =
+    "userId" in query
+      ? `userId=${encodeURIComponent(query.userId.trim())}`
+      : `random=true${query.withLoan ? "&loan=true" : ""}`;
+  return request<DatasetApplicantResponse>(`/api/dataset?${params}`, { signal });
 }
 
 /** A fresh idempotency key for one submission attempt. */

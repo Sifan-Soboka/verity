@@ -94,6 +94,12 @@ function incomeText(f: FactorResult): string {
 
 function dtiShare(value: number): string {
   if (value === 0) return "none of your income currently goes to existing debt repayments";
+  if (value > 100) {
+    const times = Math.round((value / 100) * 10) / 10;
+    return times === 1
+      ? "your debt repayments are slightly more than your whole monthly income"
+      : `your debt repayments are about ${times} times your monthly income`;
+  }
   const perHundred = Math.round(value);
   return perHundred < 1
     ? "less than AED 1 of every AED 100 you earn goes to existing debt repayments"

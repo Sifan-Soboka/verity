@@ -4,22 +4,31 @@ import { useRouter } from "next/navigation";
 import { useMemo, useRef, useState } from "react";
 
 import { ApiClientError, newSubmissionKey, submitApplication } from "@/lib/api/client";
+import type { DatasetApplicantResponse } from "@/lib/api/types";
+import type { ApplicationInput } from "@/lib/engine/types";
+import { formatAED, formatPercent } from "@/lib/format";
 import { FACTOR_KEYS, type FactorKey } from "@/lib/engine/types";
 import { REFERENCE_SCENARIOS, matchScenario, type ReferenceScenario } from "@/lib/scenarios";
 import { validateFormValues, type FieldErrors, type FormValues } from "@/lib/validation/applicationInput";
 import { INPUT_LIMITS } from "@/lib/validation/limits";
 import { ArrowRightIcon, GaugeIcon, PercentIcon, WalletIcon } from "@/components/ui/Icons";
 import { Alert, Button, Card, Spinner, cx } from "@/components/ui/primitives";
+import { DatasetPicker } from "./DatasetPicker";
 import { NumberField } from "./NumberField";
 
 const EMPTY: FormValues = { monthlyIncome: "", dtiRatio: "", creditScore: "" };
 const nf = new Intl.NumberFormat("en-US");
 
-const toFormValues = (s: ReferenceScenario): FormValues => ({
-  monthlyIncome: String(s.input.monthlyIncome),
-  dtiRatio: String(s.input.dtiRatio),
-  creditScore: String(s.input.creditScore),
+const toFormValues = (input: ApplicationInput): FormValues => ({
+  monthlyIncome: String(input.monthlyIncome),
+  dtiRatio: String(input.dtiRatio),
+  creditScore: String(input.creditScore),
 });
+
+const sameInput = (a: ApplicationInput, b: ApplicationInput) =>
+  a.monthlyIncome === b.monthlyIncome && a.dtiRatio === b.dtiRatio && a.creditScore === b.creditScore;
+
+const usd = new Intl.NumberFormat("en-US", { maximumFractionDigits: 2 });
 
 export function ApplicationForm() {
   const router = useRouter();
@@ -28,12 +37,14 @@ export function ApplicationForm() {
   const [touched, setTouched] = useState<Partial<Record<FactorKey, boolean>>>({});
   const [submitting, setSubmitting] = useState(false);
   const [formError, setFormError] = useState<string | null>(null);
+  const [datasetRecord, setDatasetRecord] = useState<DatasetApplicantResponse | null>(null);
   // One key per set of values: an identical retry is recognised by the server, an edit is a new application.
   const submissionKey = useRef<string>(newSubmissionKey());
   const inFlight = useRef(false);
 
   const parsed = useMemo(() => validateFormValues(values), [values]);
   const loadedScenario = parsed.ok ? matchScenario(parsed.value) : undefined;
+  const datasetUnchanged = datasetRecord !== null && parsed.ok && sameInput(parsed.value, datasetRecord.input);
 
   function update(key: FactorKey, value: string) {
     setValues((v) => ({ ...v, [key]: value }));
@@ -52,12 +63,34 @@ export function ApplicationForm() {
     setErrors((e) => ({ ...e, [key]: result.ok ? undefined : result.fieldErrors[key] }));
   }
 
-  function loadScenario(s: ReferenceScenario) {
-    setValues(toFormValues(s));
+  function loadValues(input: ApplicationInput) {
+    setValues(toFormValues(input));
     setErrors({});
     setTouched({});
     setFormError(null);
     submissionKey.current = newSubmissionKey();
+  }
+
+  function loadScenario(s: ReferenceScenario) {
+    setDatasetRecord(null);
+    loadValues(s.input);
+  }
+
+  function loadDatasetRecord(record: DatasetApplicantResponse) {
+    setDatasetRecord(record);
+    loadValues(record.input);
+  }
+
+  function statusLine(): string {
+    if (loadedScenario) return `Scenario ${loadedScenario.id} loaded — ${loadedScenario.purpose}.`;
+    if (datasetRecord && datasetUnchanged) {
+      const { source, input, userId } = datasetRecord;
+      return `Dataset record ${userId} loaded — income USD ${usd.format(source.monthlyIncomeUsd)} → ${formatAED(
+        input.monthlyIncome,
+      )} · DTI ${source.debtToIncomeRatio} → ${formatPercent(input.dtiRatio)} · credit score ${input.creditScore}.`;
+    }
+    if (datasetRecord) return `Dataset record ${datasetRecord.userId} loaded, then edited.`;
+    return "Or enter your own values below.";
   }
 
   async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
@@ -129,10 +162,11 @@ export function ApplicationForm() {
               })}
             </div>
           </div>
-          <p className="mt-2 min-h-5 text-xs text-navy-700" aria-live="polite">
-            {loadedScenario
-              ? `Scenario ${loadedScenario.id} loaded — ${loadedScenario.purpose}.`
-              : "Or enter your own values below."}
+          <div className="mt-4 border-t border-line pt-4">
+            <DatasetPicker onLoad={loadDatasetRecord} disabled={submitting} />
+          </div>
+          <p className="mt-3 min-h-5 text-xs font-medium text-navy-700" aria-live="polite">
+            {statusLine()}
           </p>
         </div>
 
@@ -163,11 +197,11 @@ export function ApplicationForm() {
             onBlur={() => blur("dtiRatio")}
             error={errors.dtiRatio}
             disabled={submitting}
-            range={`${limit.dtiRatio.min} – ${limit.dtiRatio.max}%`}
+            range={`${limit.dtiRatio.min} – ${nf.format(limit.dtiRatio.max)}%`}
             help={
               <>
                 Monthly debt repayments ÷ monthly income × 100. Paying AED 3,000 a month on an AED 10,000 income is{" "}
-                <strong>30</strong>%.
+                <strong>30</strong>%. It can be above 100% if repayments are larger than income.
               </>
             }
           />

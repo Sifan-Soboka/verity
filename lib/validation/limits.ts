@@ -25,10 +25,13 @@ export const INPUT_LIMITS: Record<FactorKey, FieldLimit> = {
     unit: "AED",
     example: "12000",
   },
+  // DTI can exceed 100% when repayments are larger than income — 24% of the
+  // project dataset does (max ≈ 9,067%). Such values are valid input; the
+  // policy's affordability limit (maximumDti) then rejects them with a reason.
   dtiRatio: {
     label: "Debt-to-income ratio",
     min: 0,
-    max: 100,
+    max: 10_000,
     maxDecimals: 2,
     unit: "%",
     example: "30",

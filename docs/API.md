@@ -29,7 +29,7 @@ Validates the input, runs the decision engine and explanation engine, stores the
 | Field | Range | Precision |
 |---|---|---|
 | `monthlyIncome` | 1,000 – 1,000,000 (AED) | up to 2 decimals |
-| `dtiRatio` | 0 – 100 (%) | up to 2 decimals |
+| `dtiRatio` | 0 – 10,000 (%) — above 100% means repayments exceed income | up to 2 decimals |
 | `creditScore` | 300 – 900 | whole number |
 
 ```bash
@@ -114,3 +114,29 @@ and deletes nothing.
 ```jsonc
 { "ok": true, "data": { "deleted": 5 } }
 ```
+
+---
+
+## GET `/api/dataset`
+
+Returns one record from the project dataset, converted to Verity's units. Nothing is scored or
+stored — submit the `input` values with `POST /api/applications`.
+
+| Query | Returns |
+|---|---|
+| `?userId=U00002` | that record (case-insensitive) |
+| `?random=true` | any record |
+| `?random=true&loan=true` | a record that has a loan |
+
+```jsonc
+{ "ok": true, "data": {
+  "userId": "U00002",
+  "hasLoan": true,
+  "input":  { "monthlyIncome": 12970.28, "dtiRatio": 140, "creditScore": 543 },
+  "source": { "monthlyIncomeUsd": 3531.73, "debtToIncomeRatio": 1.4, "creditScore": 543 },
+  "datasetSize": 32424
+} }
+```
+
+Errors: `400 INVALID_QUERY` (no query or malformed ID), `404 NOT_FOUND`, `500 INTERNAL_ERROR`
+(dataset file missing or malformed — details only in the server log).

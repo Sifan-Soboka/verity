@@ -16,6 +16,9 @@ stores it, and explains — in plain language and with charts — how each facto
 ## Features
 
 - **Landing page** with a worked example calculated live by the engine (report Scenario B).
+- **Project dataset input** — load any of the 32,424 applicants in
+  `data/synthetic_personal_finance_dataset.csv` by user ID or at random; values are converted and fill
+  the form (still editable). See [Dataset](#dataset).
 - **Assessment form** — numeric inputs with ranges, examples, client- and server-side validation,
   loading state, idempotent submission (double-clicks never create duplicates), and one-click presets
   for the five report scenarios (A–E), which stay editable.
@@ -27,6 +30,34 @@ stores it, and explains — in plain language and with charts — how each facto
   from stored records; recent applications with links; empty state; clear history with confirmation.
 - **Scenario check** — when submitted values match a report scenario, the results page shows whether
   the calculated outcome agrees with the report's intended outcome (it never uses that outcome).
+
+## Dataset
+
+`data/synthetic_personal_finance_dataset.csv` is the project dataset (32,424 synthetic records).
+On the assessment page, **Load from the project dataset** fetches one record through
+`GET /api/dataset` and fills the form; the user then submits it like any other application.
+
+| Dataset column | Verity input | Conversion |
+|---|---|---|
+| `monthly_income_usd` | Monthly income (AED) | × 3.6725 (fixed USD/AED peg), 2 dp |
+| `debt_to_income_ratio` | DTI ratio (%) | × 100 — the dataset stores a fraction (loan EMI ÷ income) |
+| `credit_score` | Credit score | unchanged (300–850) |
+
+Notes:
+
+- Only those three values (plus `user_id` and `has_loan`) are read. Age, gender, education, job,
+  region and the other columns are ignored, so they can't appear next to or influence a decision
+  (report §9.4 on proxy bias).
+- 19,429 records (60%) have no loan, so their DTI is 0%. "Random applicant" picks only records with a
+  loan by default.
+- 7,752 records (24%) have repayments larger than income (DTI above 100%, up to ≈ 9,067%). DTI is
+  therefore accepted up to 10,000%; anything above the policy's 60% limit is rejected with an
+  explanation.
+- The dataset has **no approval/outcome column**, so it supplies inputs only — it cannot validate the
+  decisions. Under `verity-demo-1.0` about 35% of records are approved (50.7% of those without a loan,
+  11.7% of those with one); every record with DTI above 60% is rejected.
+- To use another copy of the file, set `DATASET_PATH`. The file is parsed strictly: a missing column,
+  bad number or duplicate `user_id` stops loading with the line number rather than skipping rows.
 
 ## Tech stack
 
@@ -43,6 +74,7 @@ app/
   dashboard/page.tsx            Dashboard & history
   api/applications/route.ts     POST · GET · DELETE  (thin wrappers)
   api/applications/[id]/route.ts GET one application
+  api/dataset/route.ts          GET one dataset applicant (by ID or random)
 components/                     UI: layout, primitives, form, results, dashboard
 lib/
   engine/policy.ts              ← ALL weights, reference points, threshold and limits
@@ -53,6 +85,9 @@ lib/
   server/prismaRepository.ts    Prisma data access
   api/client.ts                 Browser API client
   scenarios.ts                  Report scenarios A–E (presets / test cases)
+  dataset/applicants.ts         Dataset parsing + USD→AED / DTI conversion
+  server/dataset.ts             Loads the dataset CSV once and looks up records
+data/                           Project dataset (CSV)
 prisma/                         schema.prisma + migrations
 tests/                          Automated tests
 docs/DECISION_POLICY.md         Formula, worked examples, calibration notes
@@ -84,6 +119,7 @@ npm start
 | Variable | Example | Purpose |
 |---|---|---|
 | `DATABASE_URL` | `file:./dev.db` | Prisma connection string (relative to `prisma/`). Never commit `.env`. |
+| `DATASET_PATH` | *(optional)* | Path to the dataset CSV. Defaults to `data/synthetic_personal_finance_dataset.csv`. |
 
 ### Database commands
 
@@ -128,7 +164,7 @@ explained in **[docs/DECISION_POLICY.md](docs/DECISION_POLICY.md)**. To change t
 ## API
 
 `POST /api/applications` · `GET /api/applications` · `GET /api/applications/{id}` ·
-`DELETE /api/applications?confirm=true` — see **[docs/API.md](docs/API.md)**.
+`DELETE /api/applications?confirm=true` · `GET /api/dataset` — see **[docs/API.md](docs/API.md)**.
 
 ## Testing
 
@@ -141,8 +177,9 @@ npm run typecheck    # TypeScript
 |---|---|
 | `tests/engine.test.ts` | normalisation, contributions, score arithmetic, threshold boundary, DTI limit, monotonicity, scenarios A–E, paths to approval |
 | `tests/explanation.test.ts` | explanations use actual values, differ per applicant, list supporting/concern factors, borderline and DTI-limit wording, no SHAP/LIME claims |
-| `tests/validation.test.ts` | empty, non-numeric, negative, zero, decimal, out-of-range, very large values, unexpected fields |
+| `tests/validation.test.ts` | empty, non-numeric, negative, zero, decimal, out-of-range (incl. DTI above 100%), very large values, unexpected fields |
 | `tests/api.test.ts` | status codes, response envelope, persistence, idempotent/duplicate submissions, database failure (500 without leaking details), history, clear |
+| `tests/dataset.test.ts` | dataset parsing and conversion, malformed files, all 32,424 real records validate and get a decision, `GET /api/dataset` |
 | `tests/repository.test.ts` | database operations against a real SQLite database built from the Prisma migration SQL |
 | `tests/prisma-repository.test.ts` | the same database contract through the real Prisma client (runs after `npm install`; skipped if the client isn't generated) |
 
@@ -162,6 +199,7 @@ Optionally switch `monthlyIncome`/`dtiRatio` to `Decimal` and `factorDetails`/`e
   validated against real lending data and ignores loan amount, term, expenses, employment, etc.
 - It is additive: below the DTI limit, strong factors can offset weak ones. The 60% DTI limit is a
   hard cut-off.
+- The dataset has no outcome labels, so it cannot be used to check whether decisions are "correct".
 - No authentication — anyone with access to a running instance can view and clear the history.
   Intended for local or classroom use.
 - Contributions describe Verity's own formula; they are not SHAP/LIME attributions of a model.
